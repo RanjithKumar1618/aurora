@@ -1,309 +1,404 @@
+```javascript
 export class MusicPlayer {
 
     constructor() {
 
+        const BASE = import.meta.env.BASE_URL;
+
+
         // =====================================================
-        // INTRO MUSIC
+        // AUDIO FILES
         // =====================================================
 
-        this.intro = new Audio("/music/intro.mp3");
+        this.intro = new Audio(`${BASE}music/intro.mp3`);
+        this.search = new Audio(`${BASE}music/search.mp3`);
+        this.reveal = new Audio(`${BASE}music/reveal.mp3`);
+        this.birthday = new Audio(`${BASE}music/birthday.mp3`);
+
+
+        // =====================================================
+        // DEFAULT SETTINGS
+        // =====================================================
+
         this.intro.loop = true;
         this.intro.volume = 0.5;
 
-        // =====================================================
-        // SEARCH MUSIC
-        // =====================================================
 
-        this.search = new Audio("/music/search.mp3");
         this.search.loop = false;
         this.search.volume = 0.7;
 
-        // =====================================================
-        // PHOTO REVEAL MUSIC
-        // =====================================================
 
-        this.reveal = new Audio("/music/reveal.mp3");
         this.reveal.loop = false;
         this.reveal.volume = 0.8;
 
-        // =====================================================
-        // BIRTHDAY MUSIC
-        // =====================================================
 
-        this.birthday = new Audio("/music/birthday.mp3");
         this.birthday.loop = false;
         this.birthday.volume = 0.85;
 
+
+        // Store fade timers
+        this.fadeTimers = {};
+
     }
 
+
+
     // =====================================================
-    // INTRO
+    // GENERIC PLAY
+    // =====================================================
+
+    play(audio) {
+
+        audio.currentTime = 0;
+
+        audio.play()
+            .catch(error => {
+
+                console.log("Audio play blocked:", error);
+
+            });
+
+    }
+
+
+
+    stop(audio) {
+
+        audio.pause();
+
+        audio.currentTime = 0;
+
+    }
+
+
+
+    // =====================================================
+    // INTRO MUSIC
     // =====================================================
 
     playIntro() {
 
-        this.intro.currentTime = 0;
-
-        this.intro.play().catch(err => {
-
-            console.log("Intro Music:", err);
-
-        });
+        this.play(this.intro);
 
     }
+
 
     stopIntro() {
 
-        this.intro.pause();
-
-        this.intro.currentTime = 0;
+        this.stop(this.intro);
 
     }
 
+
+
     // =====================================================
-    // SEARCH
+    // SEARCH MUSIC
     // =====================================================
 
     playSearch() {
 
-        this.search.currentTime = 0;
-
-        this.search.play().catch(err => {
-
-            console.log("Search Music:", err);
-
-        });
+        this.play(this.search);
 
     }
+
 
     stopSearch() {
 
-        this.search.pause();
-
-        this.search.currentTime = 0;
+        this.stop(this.search);
 
     }
 
-    fadeOutSearch(seconds = 2) {
 
-        let volume = this.search.volume;
-
-        const step = 0.05;
-
-        const timer = setInterval(() => {
-
-            volume -= step;
-
-            this.search.volume = Math.max(volume, 0);
-
-            if (volume <= 0) {
-
-                clearInterval(timer);
-
-                this.stopSearch();
-
-                this.search.volume = 0.7;
-
-            }
-
-        }, (seconds * 1000) / (0.7 / step));
-
-    }
 
     // =====================================================
-    // PHOTO REVEAL
+    // PHOTO REVEAL MUSIC
     // =====================================================
 
     playReveal() {
 
-        this.reveal.currentTime = 0;
-
-        this.reveal.play().catch(err => {
-
-            console.log("Reveal Music:", err);
-
-        });
+        this.play(this.reveal);
 
     }
+
 
     stopReveal() {
 
-        this.reveal.pause();
-
-        this.reveal.currentTime = 0;
+        this.stop(this.reveal);
 
     }
 
-    fadeInReveal(seconds = 3) {
 
-        this.reveal.volume = 0;
-
-        this.playReveal();
-
-        let volume = 0;
-
-        const step = 0.05;
-
-        const timer = setInterval(() => {
-
-            volume += step;
-
-            this.reveal.volume = Math.min(volume, 0.8);
-
-            if (volume >= 0.8) {
-
-                clearInterval(timer);
-
-            }
-
-        }, (seconds * 1000) / (0.8 / step));
-
-    }
-
-    fadeOutReveal(seconds = 3) {
-
-        let volume = this.reveal.volume;
-
-        const step = 0.05;
-
-        const timer = setInterval(() => {
-
-            volume -= step;
-
-            this.reveal.volume = Math.max(volume, 0);
-
-            if (volume <= 0) {
-
-                clearInterval(timer);
-
-                this.stopReveal();
-
-                this.reveal.volume = 0.8;
-
-            }
-
-        }, (seconds * 1000) / (0.8 / step));
-
-    }
 
     // =====================================================
-    // BIRTHDAY
+    // BIRTHDAY MUSIC
     // =====================================================
 
     playBirthday() {
 
-        this.birthday.currentTime = 0;
-
-        this.birthday.play().catch(err => {
-
-            console.log("Birthday Music:", err);
-
-        });
+        this.play(this.birthday);
 
     }
+
 
     stopBirthday() {
 
-        this.birthday.pause();
-
-        this.birthday.currentTime = 0;
+        this.stop(this.birthday);
 
     }
 
-    fadeInBirthday(seconds = 3) {
+
+
+    // =====================================================
+    // FADE ENGINE
+    // =====================================================
+
+    fade(audio, target, duration = 3, name = "default") {
+
+
+        // clear previous fade
+        if(this.fadeTimers[name]) {
+
+            clearInterval(this.fadeTimers[name]);
+
+        }
+
+
+        const start = audio.volume;
+
+        const difference = target - start;
+
+        const steps = 30;
+
+        const stepTime = (duration * 1000) / steps;
+
+
+        let count = 0;
+
+
+        this.fadeTimers[name] = setInterval(()=>{
+
+
+            count++;
+
+
+            audio.volume =
+                start + (difference * count / steps);
+
+
+
+            if(count >= steps) {
+
+
+                audio.volume = target;
+
+
+                clearInterval(this.fadeTimers[name]);
+
+
+                delete this.fadeTimers[name];
+
+
+                if(target === 0){
+
+                    audio.pause();
+
+                    audio.currentTime = 0;
+
+                }
+
+            }
+
+
+        }, stepTime);
+
+
+    }
+
+
+
+    // =====================================================
+    // FADE CONTROLS
+    // =====================================================
+
+
+    fadeOutSearch(seconds = 2){
+
+        this.fade(
+            this.search,
+            0,
+            seconds,
+            "search"
+        );
+
+
+    }
+
+
+
+    fadeInReveal(seconds = 3){
+
+
+        this.reveal.volume = 0;
+
+
+        this.playReveal();
+
+
+        this.fade(
+            this.reveal,
+            0.8,
+            seconds,
+            "reveal"
+        );
+
+
+    }
+
+
+
+    fadeOutReveal(seconds = 3){
+
+        this.fade(
+            this.reveal,
+            0,
+            seconds,
+            "reveal"
+        );
+
+    }
+
+
+
+    fadeInBirthday(seconds = 3){
+
 
         this.birthday.volume = 0;
 
+
         this.playBirthday();
 
-        let volume = 0;
 
-        const step = 0.05;
+        this.fade(
+            this.birthday,
+            0.85,
+            seconds,
+            "birthday"
+        );
 
-        const timer = setInterval(() => {
-
-            volume += step;
-
-            this.birthday.volume = Math.min(volume, 0.85);
-
-            if (volume >= 0.85) {
-
-                clearInterval(timer);
-
-            }
-
-        }, (seconds * 1000) / (0.85 / step));
 
     }
 
-    fadeOutBirthday(seconds = 3) {
 
-        let volume = this.birthday.volume;
 
-        const step = 0.05;
+    fadeOutBirthday(seconds = 3){
 
-        const timer = setInterval(() => {
 
-            volume -= step;
+        this.fade(
+            this.birthday,
+            0,
+            seconds,
+            "birthday"
+        );
 
-            this.birthday.volume = Math.max(volume, 0);
-
-            if (volume <= 0) {
-
-                clearInterval(timer);
-
-                this.stopBirthday();
-
-                this.birthday.volume = 0.85;
-
-            }
-
-        }, (seconds * 1000) / (0.85 / step));
 
     }
+
+
 
     // =====================================================
-    // VOLUME CONTROLS
+    // CINEMATIC TRANSITIONS
     // =====================================================
 
-    setIntroVolume(volume) {
 
-        this.intro.volume = volume;
+    transitionSearchToReveal(){
+
+
+        this.fadeOutSearch(2);
+
+
+        setTimeout(()=>{
+
+
+            this.fadeInReveal(3);
+
+
+        },1800);
+
+
+    }
+
+
+
+    transitionRevealToBirthday(){
+
+
+        this.fadeOutReveal(2);
+
+
+        setTimeout(()=>{
+
+
+            this.fadeInBirthday(3);
+
+
+        },1800);
+
 
     }
 
-    setSearchVolume(volume) {
 
-        this.search.volume = volume;
-
-    }
-
-    setRevealVolume(volume) {
-
-        this.reveal.volume = volume;
-
-    }
-
-    setBirthdayVolume(volume) {
-
-        this.birthday.volume = volume;
-
-    }
 
     // =====================================================
-    // SONG END EVENTS
+    // VOLUME CONTROL
     // =====================================================
 
-    onRevealEnd(callback) {
+    setIntroVolume(value){
+
+        this.intro.volume = value;
+
+    }
+
+
+    setSearchVolume(value){
+
+        this.search.volume = value;
+
+    }
+
+
+    setRevealVolume(value){
+
+        this.reveal.volume = value;
+
+    }
+
+
+    setBirthdayVolume(value){
+
+        this.birthday.volume = value;
+
+    }
+
+
+
+    // =====================================================
+    // EVENTS
+    // =====================================================
+
+    onRevealEnd(callback){
 
         this.reveal.onended = callback;
 
     }
 
-    onBirthdayEnd(callback) {
+
+
+    onBirthdayEnd(callback){
 
         this.birthday.onended = callback;
 
     }
 
+
 }
+```
