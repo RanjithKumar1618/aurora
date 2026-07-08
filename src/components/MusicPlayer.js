@@ -1,4 +1,3 @@
-```javascript
 export class MusicPlayer {
 
     constructor() {
