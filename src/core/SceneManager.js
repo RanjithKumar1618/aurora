@@ -1,93 +1,45 @@
-import { gsap } from "gsap";
+import { SceneManager } from "../components/SceneManager";
 
-export class SceneManager {
+export class SceneController {
+  constructor() {
+    this.scenes = [];
+    this.currentScene = 0;
+    this.isRunning = false;
+  }
 
-    static async fadeOut(element, duration = 1) {
+  add(scene) {
+    this.scenes.push(scene);
+  }
 
-        return new Promise(resolve => {
+  async start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
 
-            gsap.to(element, {
+    while (this.currentScene < this.scenes.length) {
+      const scene = this.scenes[this.currentScene];
+      console.log("🎬 Playing Scene:", scene.constructor.name);
 
-                opacity: 0,
+      // Get the scene container (each scene should have a root element)
+      const container = document.getElementById(scene.rootId || "photo-scene");
 
-                duration,
+      // Fade in scene container
+      if (container) await SceneManager.fadeIn(container, 1.2);
 
-                ease: "power2.inOut",
+      // Play the scene
+      await scene.play();
 
-                onComplete: resolve
+      // Fade out scene container
+      if (container) await SceneManager.fadeOut(container, 1.2);
 
-            });
-
-        });
-
+      this.currentScene++;
     }
 
-    static async fadeIn(element, duration = 1) {
+    console.log("🌌 Aurora Journey Complete ❤️");
+    this.isRunning = false;
+  }
 
-        return new Promise(resolve => {
-
-            gsap.fromTo(
-
-                element,
-
-                {
-
-                    opacity: 0
-
-                },
-
-                {
-
-                    opacity: 1,
-
-                    duration,
-
-                    ease: "power2.inOut",
-
-                    onComplete: resolve
-
-                }
-
-            );
-
-        });
-
-    }
-
-    static async zoomIn(element) {
-
-        return new Promise(resolve => {
-
-            gsap.fromTo(
-
-                element,
-
-                {
-
-                    scale: 0.8,
-
-                    opacity: 0
-
-                },
-
-                {
-
-                    scale: 1,
-
-                    opacity: 1,
-
-                    duration: 1.2,
-
-                    ease: "back.out(1.7)",
-
-                    onComplete: resolve
-
-                }
-
-            );
-
-        });
-
-    }
-
+  reset() {
+    this.currentScene = 0;
+    this.isRunning = false;
+  }
 }
