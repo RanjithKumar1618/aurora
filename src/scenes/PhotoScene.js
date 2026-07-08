@@ -8,6 +8,7 @@ export class PhotoScene {
   async play() {
     return new Promise((resolve) => {
       const music = new MusicPlayer();
+      const BASE = import.meta.env.BASE_URL;
 
       document.body.innerHTML = `
       <div id="photo-scene">
@@ -20,6 +21,7 @@ export class PhotoScene {
         <div id="aurora-layer"></div>
         <div id="heart-layer"></div>
         <div id="star-layer"></div>
+        <div id="reveal-star"></div>
       </div>`;
 
       const particles = new ParticleBackground(document.getElementById("photo-scene"), 220);
@@ -33,9 +35,9 @@ visualizer.start();
       music.fadeInReveal(2);
 
       const photos = [
-        "/photos/1.jpg","/photos/2.jpg","/photos/3.jpg",
-        "/photos/4.jpg","/photos/5.jpg","/photos/6.jpg",
-        "/photos/7.jpg"
+        `${BASE}photos/1.jpg`, `${BASE}photos/2.jpg`, `${BASE}photos/3.jpg`,
+        `${BASE}photos/4.jpg`, `${BASE}photos/5.jpg`, `${BASE}photos/6.jpg`,
+        `${BASE}photos/7.jpg`
       ];
 
       const frameStyles = ["love-frame","neon-frame","vintage-frame","crystal-frame","galaxy-frame"];
