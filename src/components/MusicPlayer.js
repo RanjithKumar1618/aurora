@@ -1,3 +1,4 @@
+
 export class MusicPlayer {
 
     constructor() {
@@ -48,14 +49,22 @@ export class MusicPlayer {
 
     play(audio) {
 
-        audio.currentTime = 0;
+        if (!audio) return;
 
-        audio.play()
-            .catch(error => {
+        // ensure volume is in valid range before playing
+        if (typeof audio.volume === 'number') {
+            audio.volume = Math.min(1, Math.max(0, audio.volume));
+        }
 
-                console.log("Audio play blocked:", error);
+        try {
+            audio.currentTime = 0;
+        } catch (e) {
+            // ignore if currentTime can't be set yet
+        }
 
-            });
+        audio.play().catch(error => {
+            console.log("Audio play blocked:", error);
+        });
 
     }
 
@@ -63,9 +72,15 @@ export class MusicPlayer {
 
     stop(audio) {
 
-        audio.pause();
+        if (!audio) return;
 
-        audio.currentTime = 0;
+        try {
+            audio.pause();
+        } catch (e) {}
+
+        try {
+            audio.currentTime = 0;
+        } catch (e) {}
 
     }
 
@@ -153,63 +168,46 @@ export class MusicPlayer {
 
     fade(audio, target, duration = 3, name = "default") {
 
+        if (!audio) return;
 
         // clear previous fade
-        if(this.fadeTimers[name]) {
-
+        if (this.fadeTimers[name]) {
             clearInterval(this.fadeTimers[name]);
-
+            delete this.fadeTimers[name];
         }
 
+        // clamp target to valid range
+        target = Math.min(1, Math.max(0, target));
 
-        const start = audio.volume;
+        const start = Math.min(1, Math.max(0, typeof audio.volume === 'number' ? audio.volume : 0));
 
         const difference = target - start;
 
         const steps = 30;
-
         const stepTime = (duration * 1000) / steps;
-
 
         let count = 0;
 
-
-        this.fadeTimers[name] = setInterval(()=>{
-
-
+        this.fadeTimers[name] = setInterval(() => {
             count++;
 
+            const newVol = start + (difference * count / steps);
 
-            audio.volume =
-                start + (difference * count / steps);
+            // clamp volume each step
+            audio.volume = Math.min(1, Math.max(0, newVol));
 
-
-
-            if(count >= steps) {
-
-
+            if (count >= steps) {
                 audio.volume = target;
 
-
                 clearInterval(this.fadeTimers[name]);
-
-
                 delete this.fadeTimers[name];
 
-
-                if(target === 0){
-
-                    audio.pause();
-
-                    audio.currentTime = 0;
-
+                if (target === 0) {
+                    try { audio.pause(); } catch (e) {}
+                    try { audio.currentTime = 0; } catch (e) {}
                 }
-
             }
-
-
         }, stepTime);
-
 
     }
 
